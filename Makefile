@@ -1,3 +1,9 @@
+DEBUG_LEVEL=3
+
+ifneq ($(DEBUG_LEVEL),0)
+export DEBUG_OPTS=-DDEBUG -DDEBUG_LEVEL=${DEBUG_LEVEL}
+endif
+
 all:
 	cd LASlib && make
 	cd LASzip && make
@@ -15,4 +21,5 @@ clobber:
 	cd LASzip && make clobber
 	cd src && make clobber
 #	cd src_full && make clobber
-	cd bin && rm -rf lasinfo laszip lasprecision las2txt txt2las las2las lasdiff lasmerge lasthin las2shp shp2las las2iso las2tin lasboundary lasview las2dem
+	cd bin && rm -rf lasinfo laszip lasprecision las2txt txt2las las2las lasdiff lasmerge lasthin las2shp shp2las las2iso las2tin lasboundary lasview las2dem lasindex
+	

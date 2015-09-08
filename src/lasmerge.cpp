@@ -38,6 +38,10 @@
 ===============================================================================
 */
 
+
+
+#include "debug.hpp"
+
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
@@ -121,8 +125,10 @@ int main(int argc, char *argv[])
   {
     for (i = 1; i < argc; i++)
     {
-      if (argv[i][0] == '–') argv[i][0] = '-';
+      if (argv[i][0] == 'ï¿½') argv[i][0] = '-';
     }
+
+
     if (!geoprojectionconverter.parse(argc, argv)) byebye(true);
     if (!lasreadopener.parse(argc, argv)) byebye(true);
     if (!laswriteopener.parse(argc, argv)) byebye(true);
@@ -241,6 +247,10 @@ int main(int argc, char *argv[])
   if (verbose) start_time = taketime();
 
   LASreader* lasreader = lasreadopener.open();
+
+  dbg(3,"type of reader returned: class %s and declared name %s", typeid(*lasreader).name(), quote(*lasreader));
+
+
   if (lasreader == 0)
   {
     fprintf(stderr, "ERROR: could not open lasreader\n");

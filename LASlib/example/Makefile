@@ -1,7 +1,7 @@
 # makefile for lasexample
 #
-#COPTS    = -g -Wall
-COPTS     = -O3 -Wall
+COPTS    = -g -w
+#COPTS     = -O3 -Wall
 COMPILER  = g++
 LINKER  = g++
 #BITS     = -64

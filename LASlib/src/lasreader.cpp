@@ -28,6 +28,8 @@
   
 ===============================================================================
 */
+
+#include "debug.hpp"
 #include "lasreader.hpp"
 
 #include "lasindex.hpp"
@@ -483,7 +485,7 @@ BOOL LASreadOpener::is_header_populated() const
   return (populate_header || (file_name && (strstr(file_name, ".las") || strstr(file_name, ".laz") || strstr(file_name, ".LAS") || strstr(file_name, ".LAZ"))));
 }
 
-void LASreadOpener::reset()
+void LASreadOpener::reset ()
 {
   file_name_current = 0;
   file_name = 0;
@@ -538,6 +540,7 @@ LASreader* LASreadOpener::open(const CHAR* other_file_name)
       }
       else
       {
+        //jdw, returned with multiple input files
         return lasreadermerged;
       }
     }
@@ -681,6 +684,7 @@ LASreader* LASreadOpener::open(const CHAR* other_file_name)
         }
         else
         {
+          //jdw, returned with one las input file);
           return lasreaderlas;
         }
       }
