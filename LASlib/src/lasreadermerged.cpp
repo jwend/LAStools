@@ -1425,7 +1425,7 @@ void LASreaderMerged::populate_rank_points()
   cur_point = 0; i = 0;
   while(cur_point < npoints)
   {
-
+    break;
   }
 
 
