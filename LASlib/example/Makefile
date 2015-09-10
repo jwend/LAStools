@@ -2,8 +2,10 @@
 #
 COPTS    = -g -w
 #COPTS     = -O3 -Wall
-COMPILER  = g++
-LINKER  = g++
+#COMPILER  = g++
+#LINKER  = g++
+COMPILER ?= mpic++
+LINKER ?= mpic++
 #BITS     = -64
 
 #LIBS     = -L/usr/lib32

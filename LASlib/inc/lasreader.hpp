@@ -111,7 +111,7 @@ public:
 
   virtual ByteStreamIn* get_stream() const = 0;
   virtual void close(BOOL close_stream=TRUE) = 0;
-
+  virtual void populate_rank_points(){}
   LASreader();
   virtual ~LASreader();
 
@@ -262,6 +262,9 @@ private:
   F32* inside_tile;
   F64* inside_circle;
   F64* inside_rectangle;
+
+
+
 };
 
 #endif

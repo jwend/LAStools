@@ -3,7 +3,7 @@
 #COPTS    = -g -Wall
 #COPTS     = -O3 -Wall -Wno-deprecated -DNDEBUG -DUNORDERED
 COPTS     = -g -w -DNDEBUG -DUNORDERED ${DEBUG_OPTS}
-COMPILER  = g++
+COMPILER  ?= mpic++
 AR  = ar rc
 #BITS     = -64
 
@@ -18,6 +18,7 @@ all: liblas.a
 liblas.a: ${OBJ_LAZ} ${OBJ_LAS} 
 	$(AR) $@ ${OBJ_LAZ} ${OBJ_LAS}
 	cp -p $@ ../lib
+	-rm ../../src/*.o
 
 .cpp.o:
 	${COMPILER} ${BITS} -c ${COPTS} ${INCLUDE} $< -o $@

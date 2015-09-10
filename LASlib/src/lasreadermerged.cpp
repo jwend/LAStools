@@ -37,6 +37,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <mpi.h>
+#include "debug.hpp"
+
 void LASreaderMerged::set_io_ibuffer_size(I32 io_ibuffer_size)
 {
   this->io_ibuffer_size = io_ibuffer_size;
@@ -520,6 +523,10 @@ void LASreaderMerged::set_keep_lastiling(BOOL keep_lastiling)
 
 BOOL LASreaderMerged::open()
 {
+  // mpi
+  MPI_Comm_size(MPI_COMM_WORLD, &process_count);
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+
   if (file_name_number == 0)
   {
     fprintf(stderr, "ERROR: no valid file names\n");
@@ -537,6 +544,8 @@ BOOL LASreaderMerged::open()
 
   U32 i,j;
   BOOL first = TRUE;
+  // mpi, allocate storage
+  file_point_counts = (I64*)malloc(sizeof(I64)*file_name_number);
 
   for (i = 0; i < file_name_number; i++)
   {
@@ -611,6 +620,8 @@ BOOL LASreaderMerged::open()
         return FALSE;
       }
     }
+    // mpi, store the point count for this file
+    file_point_counts[i] = lasreader->npoints;
     // ignore bounding box if the file has no points
     if (lasreader->npoints == 0)
     {
@@ -1385,3 +1396,65 @@ BOOL LASreaderMerged::open_next_file()
   }
   return FALSE;
 }
+
+
+
+void LASreaderMerged::populate_rank_points()
+{
+
+  I32 i;
+  I64 points_per_process = npoints/process_count;
+  I64 left_over_points = npoints%process_count;
+
+  dbg(3, "left_over_points %lli", left_over_points);
+  I64 last_process_points = points_per_process+left_over_points;
+  I64 cur_point_index = 0;
+  rank_point_counts = (I64*) malloc (sizeof(I64) * process_count);
+  rank_begin_point = (I64*) malloc (sizeof(I64) * process_count);
+  rank_end_point = (I64*) malloc (sizeof(I64) * process_count);
+  I64 cur_point = 0;
+  for(i=0; i<process_count; i++)
+  {
+    rank_point_counts[i] = points_per_process;
+    if(i==process_count-1) rank_point_counts[i] = last_process_points;
+    rank_begin_point[i] = cur_point;
+    rank_end_point[i] = rank_begin_point[i] + rank_point_counts[i] - 1;
+    cur_point += rank_point_counts[i];
+  }
+
+  cur_point = 0; i = 0;
+  while(cur_point < npoints)
+  {
+
+  }
+
+
+}
+  /*
+  I32 rank_file_index=0;
+  I32 file_index =0;
+
+  I64 cur_npoint = 0;
+  for(i=0; i<process_count; i++)
+  {
+    rank_npoints[i] = points_per_process;
+    if(i==process_count) rank_npoints[i] = last_process_points;
+    if(cur_npoint < npoints)
+    {
+      rank_file_names[i][rank_file_index] = strdup(file_names[file_index]);
+      if(cur_point + rank_npoints[i] <= )
+    }
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+

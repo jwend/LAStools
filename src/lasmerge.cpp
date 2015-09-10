@@ -47,8 +47,11 @@
 #include <string.h>
 
 #include "lasreader.hpp"
+#include "lasreadermerged.hpp"
 #include "laswriter.hpp"
 #include "geoprojectionconverter.hpp"
+
+#include <mpi.h>
 
 void usage(bool error=false, bool wait=false)
 {
@@ -75,6 +78,10 @@ static void byebye(bool error=false, bool wait=false)
     fprintf(stderr,"<press ENTER>\n");
     getc(stdin);
   }
+  if(error)
+  {
+    MPI_Finalize();
+  }
   exit(error);
 }
 
@@ -89,6 +96,7 @@ extern int lasmerge_gui(int argc, char *argv[], LASreadOpener* lasreadopener);
 
 int main(int argc, char *argv[])
 {
+  MPI_Init(&argc, &argv);
   int i;
 #ifdef COMPILE_WITH_GUI
   bool gui = false;
@@ -131,6 +139,11 @@ int main(int argc, char *argv[])
 
     if (!geoprojectionconverter.parse(argc, argv)) byebye(true);
     if (!lasreadopener.parse(argc, argv)) byebye(true);
+    if (lasreadopener.get_file_name_number()<2)
+    {
+      fprintf(stderr,"Must specify more than one input file.\n");
+      byebye(true); // only support merging more than one file
+    }
     if (!laswriteopener.parse(argc, argv)) byebye(true);
   }
 
@@ -247,6 +260,17 @@ int main(int argc, char *argv[])
   if (verbose) start_time = taketime();
 
   LASreader* lasreader = lasreadopener.open();
+  lasreader->populate_rank_points();
+  LASreaderMerged *lrm = (LASreaderMerged *)lasreader;
+  I32 process_count = lrm->get_process_count();
+
+  dbg(3, "rank %i, lrm->npoints %lli", lrm->get_rank(), lrm->npoints);
+  for (i=0; i<process_count; i++)
+  {
+    dbg(3, "rank %i, rank_point_count %lli, rank_begin_point %lli, rank_end_point %lli", lrm->get_rank(), lrm->get_rank_point_counts()[i], lrm->get_rank_begin_point()[i],lrm->get_rank_end_point()[i]);
+  }
+
+
 
   dbg(3,"type of reader returned: class %s and declared name %s", typeid(*lasreader).name(), quote(*lasreader));
 
@@ -327,12 +351,14 @@ int main(int argc, char *argv[])
   else
   {
     // open the writer
+
     LASwriter* laswriter = laswriteopener.open(&lasreader->header);
     if (laswriter == 0)
     {
       fprintf(stderr, "ERROR: could not open laswriter\n");
       byebye(true, argc==1);
     }
+
     // loop over the points
     while (lasreader->read_point())
     {
@@ -345,7 +371,7 @@ int main(int argc, char *argv[])
     if (verbose) fprintf(stderr,"merging files took %g sec.\n", taketime()-start_time); 
     delete laswriter;
   }
-
+  MPI_Finalize();
   lasreader->close();
   delete lasreader;
 

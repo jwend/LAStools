@@ -80,6 +80,49 @@ public:
   LASreaderMerged();
   ~LASreaderMerged();
 
+  I64* get_file_point_counts() const
+  {
+    return file_point_counts;
+  }
+
+  void set_file_point_counts(I64* filePointCounts)
+  {
+    file_point_counts = filePointCounts;
+  }
+
+  I32 get_process_count() const
+  {
+    return process_count;
+  }
+
+  I32 get_rank() const
+  {
+    return rank;
+  }
+
+  // mpi
+  void populate_rank_points();
+
+  U32 get_file_name_number() const
+  {
+    return file_name_number;
+  }
+
+  I64* get_rank_begin_point() const
+  {
+    return rank_begin_point;
+  }
+
+  I64* get_rank_end_point() const
+  {
+    return rank_end_point;
+  }
+
+  I64* get_rank_point_counts() const
+  {
+    return rank_point_counts;
+  }
+
 protected:
   BOOL read_point_default();
 
@@ -118,6 +161,21 @@ private:
   I32 io_ibuffer_size;
   CHAR** file_names;
   F64* bounding_boxes;
+  // mpi
+  I32 rank;
+  I32 process_count;
+  // arrays indexed by rank id
+  I64 *file_point_counts;
+  // files assigned to each process
+  CHAR ***rank_file_names;
+  I64 **rank_file_names_begin_point;
+  I64 **rank_file_names_end_point;
+  I32 *rank_file_names_count;
+  // global point begin and ends for each process
+  I64 *rank_point_counts;
+  I64 *rank_begin_point;
+  I64 *rank_end_point;
+
 };
 
 #endif

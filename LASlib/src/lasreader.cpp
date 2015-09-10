@@ -485,7 +485,7 @@ BOOL LASreadOpener::is_header_populated() const
   return (populate_header || (file_name && (strstr(file_name, ".las") || strstr(file_name, ".laz") || strstr(file_name, ".LAS") || strstr(file_name, ".LAZ"))));
 }
 
-void LASreadOpener::reset ()
+void LASreadOpener::reset()
 {
   file_name_current = 0;
   file_name = 0;
