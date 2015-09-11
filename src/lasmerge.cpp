@@ -267,7 +267,13 @@ int main(int argc, char *argv[])
   dbg(3, "rank %i, lrm->npoints %lli", lrm->get_rank(), lrm->npoints);
   for (i=0; i<process_count; i++)
   {
-    dbg(3, "rank %i, rank_point_count %lli, rank_begin_point %lli, rank_end_point %lli", lrm->get_rank(), lrm->get_rank_point_counts()[i], lrm->get_rank_begin_point()[i],lrm->get_rank_end_point()[i]);
+    dbg(3, "rank %i, rank_point_count %lli, rank_begin_point %lli, rank_end_point %lli", lrm->get_rank(), lrm->get_rank_point_count()[i], lrm->get_rank_begin_index()[i],lrm->get_rank_end_index()[i]);
+    for(int j=0; j< lrm->get_file_name_number(); j++)
+    {
+      dbg(3, "rank %i, number %i name %s count %lli, begin %lli, end %lli", lrm->get_rank(), j, lrm->get_file_names()[j], lrm->get_file_point_counts()[j],lrm->get_file_begin_index()[j], lrm->get_file_end_index()[j]);
+    }
+
+
   }
 
 

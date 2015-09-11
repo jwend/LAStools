@@ -103,25 +103,42 @@ public:
   // mpi
   void populate_rank_points();
 
+  I64* get_file_begin_index() const
+  {
+    return file_begin_index;
+  }
+
+  I64* get_file_end_index() const
+  {
+    return file_end_index;
+  }
+
   U32 get_file_name_number() const
   {
     return file_name_number;
   }
 
-  I64* get_rank_begin_point() const
+  CHAR** get_file_names() const
   {
-    return rank_begin_point;
+    return file_names;
   }
 
-  I64* get_rank_end_point() const
+  I64* get_rank_begin_index() const
   {
-    return rank_end_point;
+    return rank_begin_index;
   }
 
-  I64* get_rank_point_counts() const
+  I64* get_rank_end_index() const
   {
-    return rank_point_counts;
+    return rank_end_index;
   }
+
+  I64* get_rank_point_count() const
+  {
+    return rank_point_count;
+  }
+
+  void mpi_init_range();
 
 protected:
   BOOL read_point_default();
@@ -155,6 +172,7 @@ private:
   I32 skip_lines;
   BOOL populate_header;
   BOOL keep_lastiling;
+  U32 file_name_start; // mpi
   U32 file_name_current;
   U32 file_name_number;
   U32 file_name_allocated;
@@ -166,15 +184,18 @@ private:
   I32 process_count;
   // arrays indexed by rank id
   I64 *file_point_counts;
+  I64 *file_begin_index;
+  I64 *file_end_index;
+
   // files assigned to each process
   CHAR ***rank_file_names;
   I64 **rank_file_names_begin_point;
   I64 **rank_file_names_end_point;
   I32 *rank_file_names_count;
   // global point begin and ends for each process
-  I64 *rank_point_counts;
-  I64 *rank_begin_point;
-  I64 *rank_end_point;
+  I64 *rank_point_count;
+  I64 *rank_begin_index;
+  I64 *rank_end_index;
 
 };
 

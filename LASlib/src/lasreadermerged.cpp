@@ -1079,11 +1079,27 @@ I32 LASreaderMerged::get_format() const
   return lasreader->get_format();
 }
 
+void LASreaderMerged::mpi_init_range()
+{
+  // set file_name_start, file_name_current, file_number, npoints for this rank
+  // after open set p_count and seek file to p_count
+
+
+
+}
+
+
+
+
+
+
 BOOL LASreaderMerged::read_point_default()
 {
-  if (file_name_current == 0)
+  if (file_name_current == file_name_start)
   {
     if (!open_next_file()) return FALSE;
+    //lasreader->seek(100);
+
   }
 
   while (true)
@@ -1231,6 +1247,7 @@ LASreaderMerged::LASreaderMerged()
   parse_string = 0;
   io_ibuffer_size = LAS_TOOLS_IO_IBUFFER_SIZE;
   file_names = 0;
+  file_name_start = 0;
   bounding_boxes = 0;
   clean();
 }
@@ -1408,26 +1425,32 @@ void LASreaderMerged::populate_rank_points()
 
   dbg(3, "left_over_points %lli", left_over_points);
   I64 last_process_points = points_per_process+left_over_points;
-  I64 cur_point_index = 0;
-  rank_point_counts = (I64*) malloc (sizeof(I64) * process_count);
-  rank_begin_point = (I64*) malloc (sizeof(I64) * process_count);
-  rank_end_point = (I64*) malloc (sizeof(I64) * process_count);
+
+  rank_point_count = (I64*) malloc (sizeof(I64) * process_count);
+  rank_begin_index = (I64*) malloc (sizeof(I64) * process_count);
+  rank_end_index = (I64*) malloc (sizeof(I64) * process_count);
+
+  file_begin_index = (I64*) malloc (sizeof(I64) * file_name_number);
+  file_end_index = (I64*) malloc (sizeof(I64) * file_name_number);
+
+
   I64 cur_point = 0;
   for(i=0; i<process_count; i++)
   {
-    rank_point_counts[i] = points_per_process;
-    if(i==process_count-1) rank_point_counts[i] = last_process_points;
-    rank_begin_point[i] = cur_point;
-    rank_end_point[i] = rank_begin_point[i] + rank_point_counts[i] - 1;
-    cur_point += rank_point_counts[i];
+    rank_point_count[i] = points_per_process;
+    if(i==process_count-1) rank_point_count[i] = last_process_points;
+    rank_begin_index[i] = cur_point;
+    rank_end_index[i] = rank_begin_index[i] + rank_point_count[i] - 1;
+    cur_point += rank_point_count[i];
   }
 
-  cur_point = 0; i = 0;
-  while(cur_point < npoints)
+  cur_point =0;
+  for(i=0; i<file_name_number; i++)
   {
-    break;
+    file_begin_index[i] = cur_point;
+    file_end_index[i] = file_begin_index[i]+ file_point_counts[i] - 1;
+    cur_point += file_point_counts[i];
   }
-
 
 }
   /*
