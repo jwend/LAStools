@@ -49,9 +49,22 @@
 #include "lasreader.hpp"
 #include "lasreadermerged.hpp"
 #include "laswriter.hpp"
+#include "laswriter_las.hpp"
+#include "bytestreamout_file.hpp"
 #include "geoprojectionconverter.hpp"
 
 #include <mpi.h>
+//mpi
+I64 extended_number_of_point_records = 0;
+I64 extended_number_of_points_by_return[16] = { 0 };
+I32 max_X = 0;
+I32 min_X = 0;
+I32 max_Y = 0;
+I32 min_Y = 0;
+I32 max_Z = 0;
+I32 min_Z = 0;
+
+
 
 void usage(bool error=false, bool wait=false)
 {
@@ -357,23 +370,97 @@ int main(int argc, char *argv[])
   else
   {
     // open the writer
-
+    // jdw
+    //laswriteopener.make_file_name(0, lrm->get_rank());
     LASwriter* laswriter = laswriteopener.open(&lasreader->header);
+
+    LASwriterLAS *lwl = (LASwriterLAS*)laswriter;
+    //lwl->get_stream()->seek(lasreader->header.point_data_record_length*lrm->get_rank_begin_index[lrm->get_rank()] +lasreader->header.offset_to_point_data)
+
+    ByteStreamOutFileLE *bs = (ByteStreamOutFileLE*)lwl->get_stream();
+
+    I64 begin_index = (lrm->get_rank_begin_index())[lrm->get_rank()];
+
+    bs->seek(lasreader->header.point_data_record_length*begin_index+lasreader->header.offset_to_point_data);
+
+
     if (laswriter == 0)
     {
       fprintf(stderr, "ERROR: could not open laswriter\n");
       byebye(true, argc==1);
     }
 
+    int n = 0;
     // loop over the points
+
+
     while (lasreader->read_point())
     {
+      n++;
       laswriter->write_point(&lasreader->point);
       laswriter->update_inventory(&lasreader->point);
     }
+/*
+    I64 extended_number_of_point_records;
+    I64 extended_number_of_points_by_return[16];
+    I32 max_X;
+    I32 min_X;
+    I32 max_Y;
+    I32 min_Y;
+    I32 max_Z;
+    I32 min_Z;
+*/
+    int rank = lrm->get_rank();
+    if(rank!=0)
+    {
+      laswriter->close(FALSE);
+    }
+
+
+
+    MPI_Reduce(&(laswriter->inventory.extended_number_of_point_records), &extended_number_of_point_records, 1,
+               MPI_LONG_LONG_INT,  MPI_SUM, 0, MPI_COMM_WORLD);
+    int i;
+    for(i=0; i<16; i++)
+    {
+      MPI_Reduce(&(laswriter->inventory.extended_number_of_points_by_return[i]), &extended_number_of_points_by_return[i], 1,
+                     MPI_LONG_LONG_INT,  MPI_SUM, 0, MPI_COMM_WORLD);
+    }
+    MPI_Reduce(&(laswriter->inventory.max_X), &max_X, 1, MPI_INT,  MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&(laswriter->inventory.min_X), &min_X, 1, MPI_INT,  MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&(laswriter->inventory.max_Y), &max_Y, 1, MPI_INT,  MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&(laswriter->inventory.min_Y), &min_Y, 1, MPI_INT,  MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&(laswriter->inventory.max_Z), &max_Z, 1, MPI_INT,  MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&(laswriter->inventory.min_Z), &min_Z, 1, MPI_INT,  MPI_MIN, 0, MPI_COMM_WORLD);
+
+    if(rank==0)
+    {
+      dbg(3, "extended_number_of_point_records %lli", extended_number_of_point_records);
+      laswriter->inventory.extended_number_of_point_records = extended_number_of_point_records;
+      for(i=0; i<16; i++)
+      {
+        laswriter->inventory.extended_number_of_points_by_return[i] = extended_number_of_points_by_return[i];
+      }
+      laswriter->inventory.max_X = max_X;
+      laswriter->inventory.min_X = min_X;
+      laswriter->inventory.max_Y = max_Y;
+      laswriter->inventory.min_Y = min_Y;
+      laswriter->inventory.max_Z = max_Z;
+      laswriter->inventory.min_Z = min_Z;
+    }
+
+
+
+    dbg(3, "rank %i, read count %i, point data record length %i", lrm->get_rank(), n, lasreader->header.point_data_record_length);
+
+
     // close the writer
-    laswriter->update_header(&lasreader->header, TRUE);
-    laswriter->close();
+    if(rank==0)
+    {
+      laswriter->update_header(&lasreader->header, TRUE);
+      laswriter->close(FALSE);
+    }
+
     if (verbose) fprintf(stderr,"merging files took %g sec.\n", taketime()-start_time); 
     delete laswriter;
   }

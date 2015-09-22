@@ -1435,6 +1435,8 @@ void LASreaderMerged::populate_rank_points()
 
 
   I64 cur_point = 0;
+
+/*
   for(i=0; i<process_count; i++)
   {
     rank_point_count[i] = points_per_process;
@@ -1443,14 +1445,19 @@ void LASreaderMerged::populate_rank_points()
     rank_end_index[i] = rank_begin_index[i] + rank_point_count[i] - 1;
     cur_point += rank_point_count[i];
   }
+*/
 
   cur_point =0;
   for(i=0; i<file_name_number; i++)
   {
-    file_begin_index[i] = cur_point;
-    file_end_index[i] = file_begin_index[i]+ file_point_counts[i] - 1;
+    rank_begin_index[i] = file_begin_index[i] = cur_point;
+    rank_end_index[i] = file_end_index[i] = file_begin_index[i]+ file_point_counts[i] - 1;
+    rank_point_count[i] = file_point_counts[i];
     cur_point += file_point_counts[i];
   }
+  file_name_current = file_name_start = rank;
+  file_name_number = file_name_start + 1;
+
 
 }
   /*
