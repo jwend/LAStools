@@ -15,7 +15,7 @@
 
 
 #ifdef DEBUG
-
+#include <stdio.h>
 #include <typeinfo>
 
 #define dbg(level,fmt, ...) \

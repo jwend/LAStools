@@ -393,7 +393,7 @@ int main(int argc, char *argv[])
     int n = 0;
     // loop over the points
 
-
+    MPI_Barrier(MPI_COMM_WORLD);
     while (lasreader->read_point())
     {
       n++;

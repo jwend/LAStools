@@ -1098,7 +1098,7 @@ BOOL LASreaderMerged::read_point_default()
   if (file_name_current == file_name_start)
   {
     if (!open_next_file()) return FALSE;
-    //lasreader->seek(100);
+
 
   }
 

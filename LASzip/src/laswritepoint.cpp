@@ -242,6 +242,8 @@ BOOL LASwritePoint::init(ByteStreamOut* outstream)
   return TRUE;
 }
 
+#include "debug.hpp"
+
 BOOL LASwritePoint::write(const U8 * const * point)
 {
   U32 i;
@@ -259,6 +261,7 @@ BOOL LASwritePoint::write(const U8 * const * point)
   {
     for (i = 0; i < num_writers; i++)
     {
+      //dbg(3, "writers exist %i %s", i, typeid(*(writers[i])).name());
       writers[i]->write(point[i]);
     }
   }
