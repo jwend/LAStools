@@ -140,6 +140,11 @@ public:
 
   void mpi_init_range();
 
+  U32 get_file_name_start() const
+  {
+    return file_name_start;
+  }
+
 protected:
   BOOL read_point_default();
 

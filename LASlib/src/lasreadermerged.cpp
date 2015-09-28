@@ -1419,45 +1419,55 @@ BOOL LASreaderMerged::open_next_file()
 void LASreaderMerged::populate_rank_points()
 {
 
-  I32 i;
-  I64 points_per_process = npoints/process_count;
-  I64 left_over_points = npoints%process_count;
-
-  dbg(3, "left_over_points %lli", left_over_points);
-  I64 last_process_points = points_per_process+left_over_points;
-
-  rank_point_count = (I64*) malloc (sizeof(I64) * process_count);
-  rank_begin_index = (I64*) malloc (sizeof(I64) * process_count);
-  rank_end_index = (I64*) malloc (sizeof(I64) * process_count);
-
-  file_begin_index = (I64*) malloc (sizeof(I64) * file_name_number);
-  file_end_index = (I64*) malloc (sizeof(I64) * file_name_number);
-
-
   I64 cur_point = 0;
+  rank_begin_index = (I64*) malloc (sizeof(I64) * process_count);
 
-/*
-  for(i=0; i<process_count; i++)
+  int i,j;
+  int *rank_file_count = (int *)malloc (process_count * sizeof(int));
+  int files_per_rank = file_name_number / process_count; // integer division drops remainder
+  int remainder = file_name_number % process_count; // remainder
+  //int remainder_start = files_per_rank * process_count;
+
+  for (i = 0; i < process_count; i++)
   {
-    rank_point_count[i] = points_per_process;
-    if(i==process_count-1) rank_point_count[i] = last_process_points;
-    rank_begin_index[i] = cur_point;
-    rank_end_index[i] = rank_begin_index[i] + rank_point_count[i] - 1;
-    cur_point += rank_point_count[i];
-  }
-*/
+    rank_file_count[i] = 0;
 
-  cur_point =0;
-  for(i=0; i<file_name_number; i++)
+    int start = rank * files_per_rank;
+    int end = start + files_per_rank;
+    dbg(3,"rank %i, start %i, end %i", rank, start, end);
+    for (j = start; j < end; j++)
+    {
+      rank_file_count[i]++;
+    }
+
+    if(remainder > 0 && i<remainder)
+    {
+      rank_file_count[i]++;
+    }
+
+  }
+
+
+
+  //int file_name_index = 0;
+  file_name_number = 0;
+  I64 cur_begin_index = 0;
+  for (i = 0; i <= rank; i++)
   {
-    rank_begin_index[i] = file_begin_index[i] = cur_point;
-    rank_end_index[i] = file_end_index[i] = file_begin_index[i]+ file_point_counts[i] - 1;
-    rank_point_count[i] = file_point_counts[i];
-    cur_point += file_point_counts[i];
-  }
-  file_name_current = file_name_start = rank;
-  file_name_number = file_name_start + 1;
+    if (rank_file_count[i] > 0)
+    {
 
+      file_name_current = file_name_start = file_name_number;
+      file_name_number += rank_file_count[i];
+      rank_begin_index[i] = cur_begin_index;
+      for (j = file_name_start; j < file_name_number; j++)
+      {
+        cur_begin_index += file_point_counts[j];
+      }
+    }
+
+  }
+  //dbg(3,"rank %i, rank_file_count[rank] %i, file_name_start %i file_name_number %i, rank_begin_index[rank]", rank, rank_file_count[rank], file_name_start,file_name_number, rank_begin_index[rank]);
 
 }
   /*
@@ -1478,10 +1488,44 @@ void LASreaderMerged::populate_rank_points()
 
 
 
+/*
+  for(i=0; i<process_count; i++)
+  {
+    rank_point_count[i] = points_per_process;
+    if(i==process_count-1) rank_point_count[i] = last_process_points;
+    rank_begin_index[i] = cur_point;
+    rank_end_index[i] = rank_begin_index[i] + rank_point_count[i] - 1;
+    cur_point += rank_point_count[i];
+  }
+*/
 
 
 
+/*
+cur_point =0;
+for(i=0; i<file_name_number; i++)
+{
+  rank_begin_index[i] = file_begin_index[i] = cur_point;
+  rank_end_index[i] = file_end_index[i] = file_begin_index[i]+ file_point_counts[i] - 1;
+  rank_point_count[i] = file_point_counts[i];
+  cur_point += file_point_counts[i];
+}
+*/
 
+
+//I32 i;
+  //I64 points_per_process = npoints/process_count;
+  //I64 left_over_points = npoints%process_count;
+
+  //dbg(3, "left_over_points %lli", left_over_points);
+  //I64 last_process_points = points_per_process+left_over_points;
+
+  //rank_point_count = (I64*) malloc (sizeof(I64) * process_count);
+
+  //rank_end_index = (I64*) malloc (sizeof(I64) * process_count);
+
+  //file_begin_index = (I64*) malloc (sizeof(I64) * file_name_number);
+  //file_end_index = (I64*) malloc (sizeof(I64) * file_name_number);
 
 
 

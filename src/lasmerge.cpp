@@ -280,10 +280,10 @@ int main(int argc, char *argv[])
   dbg(3, "rank %i, lrm->npoints %lli", lrm->get_rank(), lrm->npoints);
   for (i=0; i<process_count; i++)
   {
-    dbg(3, "rank %i, rank_point_count %lli, rank_begin_point %lli, rank_end_point %lli", lrm->get_rank(), lrm->get_rank_point_count()[i], lrm->get_rank_begin_index()[i],lrm->get_rank_end_index()[i]);
-    for(int j=0; j< lrm->get_file_name_number(); j++)
+    dbg(3, "rank %i, rank_begin_point %lli", lrm->get_rank(), lrm->get_rank_begin_index()[i]);
+    for(int j=lrm->get_file_name_start(); j< lrm->get_file_name_number(); j++)
     {
-      dbg(3, "rank %i, number %i name %s count %lli, begin %lli, end %lli", lrm->get_rank(), j, lrm->get_file_names()[j], lrm->get_file_point_counts()[j],lrm->get_file_begin_index()[j], lrm->get_file_end_index()[j]);
+      dbg(3, "rank %i, number %i name %s count %lli, begin", lrm->get_rank(), j, lrm->get_file_names()[j], lrm->get_file_point_counts()[j]);
     }
 
 
@@ -369,31 +369,35 @@ int main(int argc, char *argv[])
   }
   else
   {
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    //if (lrm->get_file_name_number () > 0)
+    //{
     // open the writer
     // jdw
     //laswriteopener.make_file_name(0, lrm->get_rank());
-    LASwriter* laswriter = laswriteopener.open(&lasreader->header);
+    LASwriter* laswriter = laswriteopener.open (&lasreader->header);
 
-    LASwriterLAS *lwl = (LASwriterLAS*)laswriter;
+    LASwriterLAS *lwl = (LASwriterLAS*) laswriter;
     //lwl->get_stream()->seek(lasreader->header.point_data_record_length*lrm->get_rank_begin_index[lrm->get_rank()] +lasreader->header.offset_to_point_data)
 
-    ByteStreamOutFileLE *bs = (ByteStreamOutFileLE*)lwl->get_stream();
+    ByteStreamOutFileLE *bs = (ByteStreamOutFileLE*) lwl->get_stream ();
 
-    I64 begin_index = (lrm->get_rank_begin_index())[lrm->get_rank()];
+    I64 begin_index = (lrm->get_rank_begin_index ())[lrm->get_rank ()];
 
-    bs->seek(lasreader->header.point_data_record_length*begin_index+lasreader->header.offset_to_point_data);
-
+    bs->seek (lasreader->header.point_data_record_length * begin_index + lasreader->header.offset_to_point_data);
 
     if (laswriter == 0)
     {
-      fprintf(stderr, "ERROR: could not open laswriter\n");
-      byebye(true, argc==1);
+      fprintf (stderr, "ERROR: could not open laswriter\n");
+      byebye (true, argc == 1);
     }
+    //}
 
-    int n = 0;
     // loop over the points
 
     MPI_Barrier(MPI_COMM_WORLD);
+    int n = 0;
     while (lasreader->read_point())
     {
       n++;
