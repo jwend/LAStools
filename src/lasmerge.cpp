@@ -274,23 +274,20 @@ int main(int argc, char *argv[])
 
   LASreader* lasreader = lasreadopener.open();
   lasreader->populate_rank_points();
-  LASreaderMerged *lrm = (LASreaderMerged *)lasreader;
-  I32 process_count = lrm->get_process_count();
+  LASreaderMerged *lasreadermerged = (LASreaderMerged *)lasreader;
+  I32 process_count = lasreadermerged->get_process_count();
 
-  dbg(3, "rank %i, lrm->npoints %lli", lrm->get_rank(), lrm->npoints);
+  dbg(3, "rank %i, lasreadermerged->npoints %lli", lasreadermerged->get_rank(), lasreadermerged->npoints);
   for (i=0; i<process_count; i++)
   {
-    dbg(3, "rank %i, rank_begin_point %lli", lrm->get_rank(), lrm->get_rank_begin_index()[i]);
-    for(int j=lrm->get_file_name_start(); j< lrm->get_file_name_number(); j++)
+    dbg(3, "rank %i, rank_begin_point %lli", lasreadermerged->get_rank(), lasreadermerged->get_rank_begin_index()[i]);
+    for(int j=lasreadermerged->get_file_name_start(); j< lasreadermerged->get_file_name_number(); j++)
     {
-      dbg(3, "rank %i, number %i name %s count %lli, begin", lrm->get_rank(), j, lrm->get_file_names()[j], lrm->get_file_point_counts()[j]);
+      dbg(3, "rank %i, number %i name %s count %lli, begin", lasreadermerged->get_rank(), j, lasreadermerged->get_file_names()[j], lasreadermerged->get_file_point_counts()[j]);
     }
 
 
   }
-
-
-
   dbg(3,"type of reader returned: class %s and declared name %s", typeid(*lasreader).name(), quote(*lasreader));
 
 
@@ -369,21 +366,17 @@ int main(int argc, char *argv[])
   }
   else
   {
+    // wait for all processes to open their input files
     MPI_Barrier(MPI_COMM_WORLD);
 
-    //if (lrm->get_file_name_number () > 0)
-    //{
-    // open the writer
-    // jdw
-    //laswriteopener.make_file_name(0, lrm->get_rank());
+    // all processes open a writer
     LASwriter* laswriter = laswriteopener.open (&lasreader->header);
 
-    LASwriterLAS *lwl = (LASwriterLAS*) laswriter;
-    //lwl->get_stream()->seek(lasreader->header.point_data_record_length*lrm->get_rank_begin_index[lrm->get_rank()] +lasreader->header.offset_to_point_data)
+    // set the write file pointer... no filter support, assumes all input file's points are written to output file
+    //ByteStreamOutFileLE *bs = (ByteStreamOutFileLE*) laswriter->get_stream ();  <-- this is the ByteStreamOut type for las files
+    ByteStreamOut *bs = laswriter->get_stream ();
 
-    ByteStreamOutFileLE *bs = (ByteStreamOutFileLE*) lwl->get_stream ();
-
-    I64 begin_index = (lrm->get_rank_begin_index ())[lrm->get_rank ()];
+    I64 begin_index = (lasreadermerged->get_rank_begin_index())[lasreadermerged->get_rank ()];
 
     bs->seek (lasreader->header.point_data_record_length * begin_index + lasreader->header.offset_to_point_data);
 
@@ -392,36 +385,25 @@ int main(int argc, char *argv[])
       fprintf (stderr, "ERROR: could not open laswriter\n");
       byebye (true, argc == 1);
     }
-    //}
 
-    // loop over the points
-
+    // wait for all processes to open the output file and set their write file pointers.
     MPI_Barrier(MPI_COMM_WORLD);
-    int n = 0;
+    // loop over the points
     while (lasreader->read_point())
     {
-      n++;
       laswriter->write_point(&lasreader->point);
       laswriter->update_inventory(&lasreader->point);
     }
-/*
-    I64 extended_number_of_point_records;
-    I64 extended_number_of_points_by_return[16];
-    I32 max_X;
-    I32 min_X;
-    I32 max_Y;
-    I32 min_Y;
-    I32 max_Z;
-    I32 min_Z;
-*/
-    int rank = lrm->get_rank();
+
+    int rank = lasreadermerged->get_rank();
     if(rank!=0)
     {
       laswriter->close(FALSE);
     }
 
-
-
+    MPI_Barrier(MPI_COMM_WORLD); // not needed since reduce causes barrier, used for testing
+    // this whole MPI_Reduce section is not technically needed since we don't yet support point filtering,
+    // It was implemented now to ensure that it will work when point filtering of input files is supported
     MPI_Reduce(&(laswriter->inventory.extended_number_of_point_records), &extended_number_of_point_records, 1,
                MPI_LONG_LONG_INT,  MPI_SUM, 0, MPI_COMM_WORLD);
     int i;
@@ -453,14 +435,13 @@ int main(int argc, char *argv[])
       laswriter->inventory.min_Z = min_Z;
     }
 
-
-
-    dbg(3, "rank %i, read count %i, point data record length %i", lrm->get_rank(), n, lasreader->header.point_data_record_length);
-
+    dbg(3, "rank %i, point data record length %i", lasreadermerged->get_rank(), lasreader->header.point_data_record_length);
 
     // close the writer
     if(rank==0)
     {
+      // update header should only be called with TRUE when using the MPI_Reduce calls above,
+      // lasreadopener.open(), called above, generates a correct header for the output file, provided no points are filtered during the read
       laswriter->update_header(&lasreader->header, TRUE);
       laswriter->close(FALSE);
     }
