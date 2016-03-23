@@ -2,7 +2,7 @@
 #
 #COPTS    = -g -Wall -Wno-deprecated -DDEBUG 
 #COPTS     = -O3 -Wall -Wno-deprecated -DNDEBUG 
-COPTS     = -g -w -DNDEBUG ${DEBUG_OPTS}
+COPTS     = -O2 -w -DNDEBUG ${DEBUG_OPTS}
 #COMPILER  = CC
 #COMPILER  = g++
 #LINKER  = g++
@@ -21,7 +21,7 @@ LASLIBS     = -L../LASlib/lib
 LASINCLUDE  = -I../LASzip/src -I../LASlib/inc 
 
 #all: laszip lasinfo lasprecision las2txt txt2las las2las lasdiff lasmerge lasindex
-all: lasinfo lasmerge
+all: p_lasmerge
 
 
 laszip: laszip.o geoprojectionconverter.o 
@@ -52,8 +52,9 @@ lasdiff: lasdiff.o
 	${LINKER} ${BITS} ${COPTS} lasdiff.o -llas -o $@ ${LIBS} ${LASLIBS} $(INCLUDE) $(LASINCLUDE)
 	cp $@ ../bin
 
-lasmerge: lasmerge.o geoprojectionconverter.o
+p_lasmerge: lasmerge.o geoprojectionconverter.o
 	${LINKER} ${BITS} ${COPTS} lasmerge.o geoprojectionconverter.o -llas -o $@ ${LIBS} ${LASLIBS} $(INCLUDE) $(LASINCLUDE)
+	mkdir -p bin
 	cp $@ ../bin
 
 lasindex: lasindex.o
@@ -68,9 +69,10 @@ lasindex: lasindex.o
 
 clean:
 	rm -rf *.o
-	rm -rf laszip lasinfo lasprecision las2txt txt2las las2las lasdiff lasmerge lasindex
+	rm -rf laszip lasinfo lasprecision las2txt txt2las las2las lasdiff lasmerge lasindex p_lasmerge ../bin/p_lasmerge
 
 clobber:
 	rm -rf *.o
-	rm -rf laszip lasinfo lasprecision las2txt txt2las las2las lasdiff lasmerge lasindex
+	rm -rf laszip lasinfo lasprecision las2txt txt2las las2las lasdiff lasmerge lasindex p_lasmerge ../bin/p_lasmerge
 	rm -rf *~
+	

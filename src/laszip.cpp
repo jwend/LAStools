@@ -58,6 +58,8 @@ using namespace std;
 #include "lasindex.hpp"
 #include "lasquadtree.hpp"
 
+
+
 class OffsetSize
 {
 public:
@@ -114,6 +116,7 @@ extern int laszip_multi_core(int argc, char *argv[], GeoProjectionConverter* geo
 
 int main(int argc, char *argv[])
 {
+
   int i;
   BOOL dry = FALSE;
 #ifdef COMPILE_WITH_GUI
@@ -163,7 +166,7 @@ int main(int argc, char *argv[])
   {
     for (i = 1; i < argc; i++)
     {
-      if (argv[i][0] == '–') argv[i][0] = '-';
+      if (argv[i][0] == 'ï¿½') argv[i][0] = '-';
     }
     if (!geoprojectionconverter.parse(argc, argv)) byebye(true);
     if (!lasreadopener.parse(argc, argv)) byebye(true);
