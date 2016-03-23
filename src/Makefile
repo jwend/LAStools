@@ -54,7 +54,7 @@ lasdiff: lasdiff.o
 
 p_lasmerge: lasmerge.o geoprojectionconverter.o
 	${LINKER} ${BITS} ${COPTS} lasmerge.o geoprojectionconverter.o -llas -o $@ ${LIBS} ${LASLIBS} $(INCLUDE) $(LASINCLUDE)
-	mkdir -p bin
+	mkdir -p ../bin
 	cp $@ ../bin
 
 lasindex: lasindex.o
